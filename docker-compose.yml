@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    restart: always
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - 9092:9092
+    restart: always
+    environment:
+      KAFKA_LISTENERS: PLAINTEXT://:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  products-service:
+    build: ./products
+    container_name: products-service
+    ports:
+      - "3001:3001"
+    environment:
+      APP_SECRET: "barkat"
+      PORT: 3001
+    depends_on:
+      - kafka
+
+  orders-service:
+    build: ./orders
+    container_name: orders-service
+    ports:
+      - "3002:3002"
+    environment:
+      APP_SECRET: "barkat"
+      PORT: 3002
+    depends_on:
+      - kafka
